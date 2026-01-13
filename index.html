@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Form Laporan Dokumentasi - Fixed Snug</title>
+    <title>Laporan Dokumentasi Pekerjaan</title>
     
     <!-- Leaflet & Geosearch -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -60,7 +60,6 @@
             font-size: 10px; background: #fff; min-width: 0;
         }
 
-        /* TANGGAL */
         .date-container { position: relative; flex: 1; display: flex; align-items: center; }
         .date-container input[type="date"] {
             position: absolute; left: 0; top: 0; width: 100%; height: 100%;
@@ -90,20 +89,22 @@
         }
         .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* KETERANGAN (TEXTAREA) - PERBAIKAN FINAL */
+        /* KETERANGAN (TEXTAREA) - SOLUSI AUTO EXPAND */
         .footer-section { padding: 10px; }
         .footer-section textarea { 
             width: 100%; 
-            min-height: 40px; 
-            padding: 8px; 
-            border: 1px solid #333; /* Border agak tegas agar terlihat pas */
-            font-size: 11px; 
-            line-height: 1.4;
+            min-height: 45px; 
+            padding: 10px; 
+            border: 1px solid #ced4da; 
+            font-size: 12px; 
+            line-height: 1.5;
             resize: none; 
-            border-radius: 2px; 
-            overflow: hidden; 
+            border-radius: 4px; 
+            overflow: hidden; /* Mencegah Scrollbar */
             display: block;
             font-family: inherit;
+            background-color: #fff;
+            transition: height 0.1s ease;
         }
 
         /* ACTIONS */
@@ -111,18 +112,18 @@
         .btn-add { background: #3498db !important; color: white !important; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-print { background: #27ae60 !important; color: white !important; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* MAP MODAL */
         #map-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
         .modal-content { background: white; margin: 2% auto; width: 95%; max-width: 700px; border-radius: 8px; overflow: hidden; }
         #map-container { height: 450px; width: 100%; }
 
         @media print {
-            .actions, .btn-map-trigger, .btn-photo, .photo-actions, input[type="date"], #map-modal, .btn-remove { 
+            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove { 
                 display: none !important; 
             }
             body { background: white; padding: 0; }
-            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 15px; page-break-inside: avoid; }
-            .footer-section textarea { border: none; padding: 5px 0; height: auto !important; }
+            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
+            /* Memaksa textarea tampil penuh tanpa border saat print */
+            .footer-section textarea { border: none !important; padding: 5px 0 !important; height: auto !important; overflow: visible !important; }
         }
     </style>
 </head>
@@ -141,9 +142,9 @@
 <div id="map-modal">
     <div class="modal-content">
         <div id="map-container"></div>
-        <div class="modal-footer" style="padding:10px; display:flex; justify-content:flex-end; gap:10px;">
+        <div class="modal-footer" style="padding:10px; display:flex; justify-content:flex-end; gap:8px;">
             <button onclick="closeMap()">Batal</button>
-            <button onclick="confirmLocation()">Simpan</button>
+            <button onclick="confirmLocation()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px;">Simpan</button>
         </div>
     </div>
 </div>
@@ -158,11 +159,11 @@
         return `${days[dateObj.getDay()]}, ${String(dateObj.getDate()).padStart(2, '0')} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     }
 
-    // FUNGSI AUTO-EXPAND YANG SUDAH DIPERBAIKI (TIDAK ADA JARAK BERLEBIH)
-    function autoExpand(textarea) {
-        textarea.style.height = 'auto'; // Reset agar bisa mengecil jika teks dihapus
-        // Tambahkan 2px untuk mengompensasi border atas dan bawah (1px + 1px)
-        textarea.style.height = (textarea.scrollHeight + 2) + 'px'; 
+    // FUNGSI UTAMA: Membuat kotak memanjang otomatis tanpa sisa ruang
+    function autoExpand(el) {
+        el.style.height = 'auto'; // Reset height
+        // Set height sesuai scrollHeight + sedikit padding untuk kenyamanan visual
+        el.style.height = (el.scrollHeight) + 'px';
     }
 
     function addNewJobItem() {
@@ -174,7 +175,10 @@
         
         const jobHtml = `
             <div class="job-item" id="item-${itemCount}">
-                <div class="header-main"><span>ITEM #${itemCount}</span></div>
+                <div class="header-main">
+                    <span>ITEM #${itemCount}</span>
+                    ${itemCount > 1 ? `<button onclick="this.closest('.job-item').remove()" style="background:red; color:white; border:none; border-radius:3px; padding:2px 8px; font-size:10px;">Hapus</button>` : ''}
+                </div>
                 <div class="input-group">
                     <label class="label-mini">Koordinat Lokasi:</label>
                     <div class="input-row">
@@ -193,16 +197,18 @@
                 <div class="grid-content">
                     ${[1,2,3].map(i => `
                         <div class="column">
-                            <div class="photo-actions">
-                                <button onclick="document.getElementById('f-${i}-${itemCount}').click()" style="flex:1; font-size:9px;">📷 Foto</button>
-                            </div>
+                            <button onclick="document.getElementById('f-${i}-${itemCount}').click()" style="width:100%; font-size:9px; margin-bottom:5px;">📷 Foto</button>
                             <input type="file" id="f-${i}-${itemCount}" accept="image/*" style="display:none" onchange="handleImg(this, 'p-${i}-${itemCount}')">
                             <div class="image-preview" id="p-${i}-${itemCount}"><span>Preview</span></div>
                         </div>
                     `).join('')}
                 </div>
                 <div class="footer-section">
-                    <textarea placeholder="Keterangan pekerjaan..." oninput="autoExpand(this)"></textarea>
+                    <textarea 
+                        placeholder="Keterangan pekerjaan..." 
+                        oninput="autoExpand(this)" 
+                        rows="1"
+                    ></textarea>
                 </div>
             </div>
         `;
@@ -214,12 +220,11 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            document.getElementById(previewId).innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:100%;">`;
+            document.getElementById(previewId).innerHTML = `<img src="${e.target.result}">`;
         };
         reader.readAsDataURL(file);
     }
 
-    // Fungsi Map Sederhana
     function openMap(id) {
         activeInputId = id;
         document.getElementById('map-modal').style.display = 'block';
@@ -231,7 +236,9 @@
                 if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
             });
         }
+        setTimeout(() => map.invalidateSize(), 300);
     }
+
     function closeMap() { document.getElementById('map-modal').style.display = 'none'; }
     function confirmLocation() {
         if (tempCoords) document.getElementById(activeInputId).value = `https://www.google.com/maps?q=${tempCoords}`;
