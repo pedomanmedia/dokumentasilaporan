@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Laporan Dokumentasi Pekerjaan</title>
     
-    <!-- Leaflet & Geosearch -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css" />
@@ -89,23 +88,23 @@
         }
         .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* PERBAIKAN TOTAL KOTAK KETERANGAN */
+        /* PERBAIKAN KOLOM KETERANGAN */
         .footer-section { padding: 10px; }
         .footer-section textarea { 
             width: 100%; 
-            min-height: 40px; 
-            height: 40px; /* Nilai awal */
+            min-height: 50px; /* Tinggi minimal agar tidak terlalu tipis */
+            height: auto; 
             padding: 10px; 
-            border: 2px solid #333; /* Ditebalkan agar terlihat perubahannya */
+            border: 1px solid #ced4da; 
             font-size: 12px; 
-            line-height: 1.5;
+            line-height: 1.6;
             resize: none; 
             border-radius: 4px; 
-            overflow: hidden !important; /* WAJIB: Sembunyikan scroll */
+            overflow: hidden; /* Sembunyikan scrollbar agar memanjang ke bawah */
             display: block;
             font-family: inherit;
             background-color: #fff;
-            transition: none; /* Hilangkan transisi agar respon instan */
+            box-sizing: border-box; /* Agar padding tidak mengganggu hitungan tinggi */
         }
 
         /* ACTIONS */
@@ -118,12 +117,18 @@
         #map-container { height: 450px; width: 100%; }
 
         @media print {
-            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove { 
+            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove, .column button { 
                 display: none !important; 
             }
             body { background: white; padding: 0; }
             .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
-            .footer-section textarea { border: none !important; padding: 5px 0 !important; height: auto !important; overflow: visible !important; }
+            /* Memastikan textarea tampil penuh tanpa scrollbar saat diprint */
+            .footer-section textarea { 
+                border: 1px solid #ddd !important; 
+                height: auto !important; 
+                overflow: visible !important; 
+                min-height: 0 !important;
+            }
         }
     </style>
 </head>
@@ -159,17 +164,19 @@
         return `${days[dateObj.getDay()]}, ${String(dateObj.getDate()).padStart(2, '0')} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     }
 
-    // FUNGSI AUTO-EXPAND UNIVERSAL (Menggunakan Event Delegation)
+    // FUNGSI AUTO-EXPAND (DIPERBAIKI)
+    function autoExpand(el) {
+        el.style.height = 'auto'; 
+        // Hitung scrollHeight untuk mendapatkan tinggi konten asli
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    // Event listener untuk semua textarea yang ada sekarang maupun yang akan datang
     document.addEventListener('input', function (e) {
         if (e.target.tagName.toLowerCase() === 'textarea') {
             autoExpand(e.target);
         }
     });
-
-    function autoExpand(el) {
-        el.style.height = 'auto'; // Reset dulu
-        el.style.height = (el.scrollHeight + 2) + 'px'; // Atur sesuai konten + buffer border
-    }
 
     function addNewJobItem() {
         itemCount++;
@@ -208,18 +215,23 @@
                     `).join('')}
                 </div>
                 <div class="footer-section">
-                    <textarea placeholder="Keterangan pekerjaan..."></textarea>
+                    <textarea placeholder="Keterangan pekerjaan..." onfocus="autoExpand(this)"></textarea>
                 </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', jobHtml);
     }
 
-    // Memastikan semua kotak memanjang sebelum jendela print muncul
+    // Fungsi sebelum cetak untuk memastikan semua box sudah terbuka penuh
     function forceExpandAndPrint() {
         const textareas = document.querySelectorAll('textarea');
-        textareas.forEach(ta => autoExpand(ta));
-        window.print();
+        textareas.forEach(ta => {
+            ta.style.height = 'auto';
+            ta.style.height = ta.scrollHeight + 'px';
+        });
+        setTimeout(() => {
+            window.print();
+        }, 500);
     }
 
     function handleImg(input, previewId) {
