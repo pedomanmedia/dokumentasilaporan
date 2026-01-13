@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/bundle.min.js"></script>
 
     <style>
-        /* CSS BASE */
+        /* CSS DASAR */
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body { 
             font-family: 'Segoe UI', Helvetica, Arial, sans-serif; 
@@ -24,7 +24,7 @@
         .container { width: 100%; max-width: 900px; margin: auto; }
         h3.main-title { text-align: center; font-size: 14px; text-transform: uppercase; margin: 10px 0 15px 0; }
 
-        /* ITEM CARD */
+        /* KARTU ITEM */
         .job-item {
             background: white;
             border: 1px solid #ced4da;
@@ -89,22 +89,23 @@
         }
         .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* KETERANGAN (TEXTAREA) - SOLUSI AUTO EXPAND */
+        /* PERBAIKAN TOTAL KOTAK KETERANGAN */
         .footer-section { padding: 10px; }
         .footer-section textarea { 
             width: 100%; 
-            min-height: 45px; 
+            min-height: 40px; 
+            height: 40px; /* Nilai awal */
             padding: 10px; 
-            border: 1px solid #ced4da; 
+            border: 2px solid #333; /* Ditebalkan agar terlihat perubahannya */
             font-size: 12px; 
             line-height: 1.5;
             resize: none; 
             border-radius: 4px; 
-            overflow: hidden; /* Mencegah Scrollbar */
+            overflow: hidden !important; /* WAJIB: Sembunyikan scroll */
             display: block;
             font-family: inherit;
             background-color: #fff;
-            transition: height 0.1s ease;
+            transition: none; /* Hilangkan transisi agar respon instan */
         }
 
         /* ACTIONS */
@@ -122,7 +123,6 @@
             }
             body { background: white; padding: 0; }
             .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
-            /* Memaksa textarea tampil penuh tanpa border saat print */
             .footer-section textarea { border: none !important; padding: 5px 0 !important; height: auto !important; overflow: visible !important; }
         }
     </style>
@@ -135,7 +135,7 @@
     
     <div class="actions">
         <button class="btn-add" onclick="addNewJobItem()">+ Tambah Item Pekerjaan</button>
-        <button class="btn-print" onclick="window.print()">🖨️ Cetak Halaman (Simpan PDF)</button>
+        <button class="btn-print" onclick="forceExpandAndPrint()">🖨️ Cetak Halaman (Simpan PDF)</button>
     </div>
 </div>
 
@@ -159,11 +159,16 @@
         return `${days[dateObj.getDay()]}, ${String(dateObj.getDate()).padStart(2, '0')} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     }
 
-    // FUNGSI UTAMA: Membuat kotak memanjang otomatis tanpa sisa ruang
+    // FUNGSI AUTO-EXPAND UNIVERSAL (Menggunakan Event Delegation)
+    document.addEventListener('input', function (e) {
+        if (e.target.tagName.toLowerCase() === 'textarea') {
+            autoExpand(e.target);
+        }
+    });
+
     function autoExpand(el) {
-        el.style.height = 'auto'; // Reset height
-        // Set height sesuai scrollHeight + sedikit padding untuk kenyamanan visual
-        el.style.height = (el.scrollHeight) + 'px';
+        el.style.height = 'auto'; // Reset dulu
+        el.style.height = (el.scrollHeight + 2) + 'px'; // Atur sesuai konten + buffer border
     }
 
     function addNewJobItem() {
@@ -177,7 +182,6 @@
             <div class="job-item" id="item-${itemCount}">
                 <div class="header-main">
                     <span>ITEM #${itemCount}</span>
-                    ${itemCount > 1 ? `<button onclick="this.closest('.job-item').remove()" style="background:red; color:white; border:none; border-radius:3px; padding:2px 8px; font-size:10px;">Hapus</button>` : ''}
                 </div>
                 <div class="input-group">
                     <label class="label-mini">Koordinat Lokasi:</label>
@@ -204,15 +208,18 @@
                     `).join('')}
                 </div>
                 <div class="footer-section">
-                    <textarea 
-                        placeholder="Keterangan pekerjaan..." 
-                        oninput="autoExpand(this)" 
-                        rows="1"
-                    ></textarea>
+                    <textarea placeholder="Keterangan pekerjaan..."></textarea>
                 </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', jobHtml);
+    }
+
+    // Memastikan semua kotak memanjang sebelum jendela print muncul
+    function forceExpandAndPrint() {
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(ta => autoExpand(ta));
+        window.print();
     }
 
     function handleImg(input, previewId) {
