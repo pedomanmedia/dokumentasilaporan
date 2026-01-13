@@ -90,7 +90,7 @@
             background: #eee; font-size: 9px; font-weight: bold; cursor: pointer;
         }
 
-        /* IMAGE PREVIEW (Sesuai tanpa melar) */
+        /* IMAGE PREVIEW */
         .image-preview {
             width: 100%; height: 120px; border: 1px dashed #ccc;
             display: flex; justify-content: center; align-items: center;
@@ -99,8 +99,20 @@
         .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .image-preview span { font-size: 9px; color: #ccc; }
 
+        /* KETERANGAN (TEXTAREA) - PERBAIKAN AUTO-HEIGHT */
         .footer-section { padding: 10px; }
-        .footer-section textarea { width: 100%; height: 50px; padding: 8px; border: 1px solid #ddd; font-size: 10px; resize: none; border-radius: 2px; }
+        .footer-section textarea { 
+            width: 100%; 
+            min-height: 50px; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            font-size: 11px; 
+            resize: none; 
+            border-radius: 2px; 
+            overflow: hidden; /* Hilangkan scrollbar manual */
+            display: block;
+            line-height: 1.4;
+        }
 
         /* ACTIONS */
         .actions { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 40px 0; }
@@ -113,11 +125,25 @@
         #map-container { height: 450px; width: 100%; }
         .modal-footer { padding: 10px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #eee; }
 
+        /* CSS PRINT KHUSUS UNTUK PDF */
         @media print {
-            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove { display: none !important; }
+            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove { 
+                display: none !important; 
+            }
             body { background: white; padding: 0; }
-            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; }
-            input[type="text"], .date-display { border: none; padding: 0; font-weight: bold; }
+            .container { max-width: 100%; }
+            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
+            
+            /* Agar textarea menyesuaikan tinggi saat diprint */
+            .footer-section textarea {
+                height: auto !important;
+                border: none;
+                padding-left: 0;
+                overflow: visible !important;
+                font-weight: normal;
+            }
+            
+            input[type="text"], .date-display { border: none; padding: 0; font-weight: bold; background: none; }
         }
     </style>
 </head>
@@ -157,6 +183,12 @@
 
     function onDateChange(input, displayId) {
         if (input.value) document.getElementById(displayId).innerText = formatToIndonesian(new Date(input.value));
+    }
+
+    // Fungsi untuk membuat kotak keterangan memanjang otomatis
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
     }
 
     function addNewJobItem() {
@@ -203,14 +235,16 @@
                     `).join('')}
                 </div>
                 <div class="footer-section">
-                    <textarea placeholder="Keterangan pekerjaan..."></textarea>
+                    <textarea 
+                        placeholder="Keterangan pekerjaan..." 
+                        oninput="autoResizeTextarea(this)"
+                    ></textarea>
                 </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', jobHtml);
     }
 
-    // --- FUNGSI KOMPRESI GAMBAR (Kunci agar PDF kecil) ---
     function handleImageUpload(input, previewId) {
         const file = input.files[0];
         if (!file) return;
@@ -222,18 +256,13 @@
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                // Atur resolusi maksimal (lebar 800px sudah sangat cukup untuk laporan PDF)
                 const MAX_WIDTH = 800;
                 const scaleSize = MAX_WIDTH / img.width;
                 canvas.width = MAX_WIDTH;
                 canvas.height = img.height * scaleSize;
-
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                // Kompres kualitas menjadi 0.6 (60%) untuk menghemat ruang tanpa pecah
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                
                 document.getElementById(previewId).innerHTML = `<img src="${compressedDataUrl}">`;
             };
         };
