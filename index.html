@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Laporan Dokumentasi Pekerjaan</title>
+    <title>Laporan Pekerjaan v2.0</title>
     
     <!-- Leaflet & Geosearch -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,231 +12,156 @@
     <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/bundle.min.js"></script>
 
     <style>
-        /* CSS BASE */
+        /* CSS RESET & BASE */
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body { 
-            font-family: 'Segoe UI', Helvetica, Arial, sans-serif; 
+            font-family: sans-serif; 
             margin: 0; padding: 10px; 
-            background-color: #f4f6f9; 
-            color: #333;
+            background-color: #f0f2f5; 
             font-size: 11px;
         }
-        .container { width: 100%; max-width: 900px; margin: auto; }
-        h3.main-title { text-align: center; font-size: 14px; text-transform: uppercase; margin: 10px 0 15px 0; }
+        .container { width: 100%; max-width: 800px; margin: auto; }
 
-        /* ITEM CARD */
+        /* CARD ITEM */
         .job-item {
             background: white;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
             margin-bottom: 20px;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             page-break-inside: avoid;
         }
-        .header-main {
-            padding: 8px 12px;
-            background: #34495e !important;
-            color: #fff !important;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .header { padding: 10px; background: #34495e; color: white; font-weight: bold; }
         .input-group { padding: 10px; border-bottom: 1px solid #eee; }
-        .label-mini { font-size: 10px; font-weight: bold; display: block; margin-bottom: 4px; color: #555; }
-        .input-row { display: flex; gap: 5px; align-items: center; margin-bottom: 8px; }
-
-        .btn-map-trigger {
-            background-color: #f39c12 !important;
-            color: white !important;
-            padding: 6px 10px; border: none; border-radius: 3px;
-            cursor: pointer; font-size: 10px; font-weight: bold;
-        }
-        input[type="text"] {
-            flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 3px;
-            font-size: 10px; background: #fff; min-width: 0;
-        }
-
-        .date-display {
-            width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 3px;
-            font-size: 10px; background: #eee; color: #333;
-        }
 
         /* GRID FOTO */
-        .grid-header {
-            display: grid; grid-template-columns: 1fr 1fr 1fr;
-            text-align: center; background: #f8f9fa !important;
-            font-size: 10px; font-weight: bold;
-            border-top: 1px solid #eee; border-bottom: 1px solid #eee;
-        }
-        .grid-header div { padding: 8px 2px; border-right: 1px solid #eee; }
+        .grid-header { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; background: #eee; font-weight: bold; border-bottom: 1px solid #ccc; }
+        .grid-header div { padding: 5px; border-right: 1px solid #ccc; }
         .grid-content { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-        .column { padding: 8px 4px; border-right: 1px solid #eee; display: flex; flex-direction: column; align-items: center; }
+        .column { padding: 5px; border-right: 1px solid #eee; text-align: center; }
 
-        .image-preview {
-            width: 100%; height: 120px; border: 1px dashed #ccc;
-            display: flex; justify-content: center; align-items: center;
-            background: #fafafa; border-radius: 2px; overflow: hidden; margin-top: 5px;
+        .preview-box {
+            width: 100%; height: 110px; border: 1px dashed #bbb; margin-top: 5px;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
-        .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* KETERANGAN (TEXTAREA) - SOLUSI UNTUK HOSTING */
-        .footer-section { padding: 10px; }
+        /* FIX TEXTAREA AGAR MEMANJANG KE BAWAH */
+        .footer-section { padding: 10px; background: #fff; }
         .footer-section textarea { 
             width: 100%; 
-            min-height: 45px;
-            height: 45px; 
+            min-height: 45px; 
             padding: 10px; 
-            border: 1px solid #ced4da; 
+            border: 1px solid #333; /* Border hitam tegas agar terlihat batasnya */
             font-size: 12px; 
             line-height: 1.5;
             resize: none; 
-            border-radius: 4px; 
-            overflow: hidden !important; /* Mencegah munculnya scroll */
+            overflow: hidden !important; /* Menghilangkan scrollbar */
             display: block;
-            font-family: inherit;
-            background-color: #fff;
+            border-radius: 4px;
+            background: #fff;
         }
 
-        /* ACTIONS */
-        .actions { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 40px 0; }
-        .btn-add { background: #3498db !important; color: white !important; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .btn-print { background: #27ae60 !important; color: white !important; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        /* BUTTONS */
+        .actions { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; }
+        .btn { padding: 12px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-blue { background: #3498db; }
+        .btn-green { background: #27ae60; }
 
-        #map-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
-        .modal-content { background: white; margin: 2% auto; width: 95%; max-width: 700px; border-radius: 8px; overflow: hidden; }
-        #map-container { height: 450px; width: 100%; }
+        /* MODAL MAP */
+        #map-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; }
+        .modal-content { background:white; width:90%; margin: 10% auto; padding:10px; border-radius:8px; }
+        #map { height: 350px; width: 100%; }
 
         @media print {
-            .actions, .btn-map-trigger, .photo-actions, .btn-remove, input[type="date"], #map-modal, .btn-photo { 
-                display: none !important; 
-            }
-            body { background: white; padding: 0; }
-            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
-            .footer-section textarea { border: none !important; padding: 5px 0 !important; height: auto !important; overflow: visible !important; }
+            .btn, .photo-btn, #map-modal { display: none !important; }
+            .job-item { border: 1px solid black; margin-bottom: 15px; }
+            .footer-section textarea { border: none !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h3 class="main-title">Laporan Dokumentasi Pekerjaan</h3>
-    <div id="job-container"></div>
+    <h2 style="text-align:center;">LAPORAN DOKUMENTASI</h2>
+    <div id="main-list"></div>
     
     <div class="actions">
-        <button class="btn-add" onclick="addNewJobItem()">+ Tambah Item Pekerjaan</button>
-        <button class="btn-print" onclick="forceExpandAndPrint()">🖨️ Cetak Halaman (Simpan PDF)</button>
+        <button class="btn btn-blue" onclick="addJob()">+ Tambah Item Pekerjaan</button>
+        <button class="btn btn-green" onclick="preparePrint()">🖨️ Cetak Halaman (PDF)</button>
     </div>
 </div>
 
+<!-- Modal Map -->
 <div id="map-modal">
     <div class="modal-content">
-        <div id="map-container"></div>
-        <div class="modal-footer" style="padding:10px; display:flex; justify-content:flex-end; gap:8px;">
-            <button onclick="closeMap()">Batal</button>
-            <button onclick="confirmLocation()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:4px;">Simpan</button>
+        <div id="map"></div>
+        <div style="text-align:right; margin-top:10px;">
+            <button onclick="document.getElementById('map-modal').style.display='none'">Tutup</button>
         </div>
     </div>
 </div>
 
 <script>
-    let itemCount = 0;
-    let map, marker, activeInputId, tempCoords;
+    let counter = 0;
 
-    function formatToIndonesian(dateObj) {
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        return `${days[dateObj.getDay()]}, ${String(dateObj.getDate()).padStart(2, '0')} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+    // FUNGSI INI ADALAH KUNCI AGAR TEXTAREA OTOMATIS PANJANG
+    function adjustHeight(el) {
+        el.style.height = 'auto'; // Reset dulu
+        el.style.height = (el.scrollHeight) + 'px'; // Atur sesuai tinggi teks
     }
 
-    // --- LOGIK AUTO EXPAND GLOBAL (Anti-Gagal) ---
-    function autoExpand(el) {
-        el.style.height = '1px'; // Reset sangat kecil agar scrollHeight akurat
-        el.style.height = (el.scrollHeight) + 'px';
-    }
-
-    // Mendengarkan semua input textarea di seluruh halaman
-    document.addEventListener('input', function (e) {
-        if (e.target.tagName.toLowerCase() === 'textarea') {
-            autoExpand(e.target);
+    // Menjalankan fungsi di atas secara otomatis saat ada pengetikan di mana pun
+    document.addEventListener('input', function(event) {
+        if (event.target.tagName.toLowerCase() === 'textarea') {
+            adjustHeight(event.target);
         }
-    }, false);
+    });
 
-    function addNewJobItem() {
-        itemCount++;
-        const container = document.getElementById('job-container');
-        const todayFormatted = formatToIndonesian(new Date());
-        
-        const jobHtml = `
-            <div class="job-item" id="item-${itemCount}">
-                <div class="header-main"><span>ITEM #${itemCount}</span></div>
+    function addJob() {
+        counter++;
+        const html = `
+            <div class="job-item">
+                <div class="header">ITEM #${counter}</div>
                 <div class="input-group">
-                    <label class="label-mini">Koordinat Lokasi:</label>
-                    <div class="input-row">
-                        <button class="btn-map-trigger" onclick="openMap('gps-res-${itemCount}')">🗺️ Pilih Lokasi</button>
-                        <input type="text" id="gps-res-${itemCount}" readonly placeholder="Link koordinat...">
-                    </div>
-                    <label class="label-mini" style="margin-top:8px;">Tanggal Pekerjaan:</label>
-                    <div class="input-row">
-                        <div class="date-display">${todayFormatted}</div>
-                    </div>
+                    <b>Lokasi:</b> <input type="text" placeholder="Link koordinat..." style="width:70%; font-size:10px;">
+                    <br><br>
+                    <b>Tanggal:</b> <span>${new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}</span>
                 </div>
                 <div class="grid-header"><div>SEBELUM</div><div>PROSES</div><div>SESUDAH</div></div>
                 <div class="grid-content">
                     ${[1,2,3].map(i => `
                         <div class="column">
-                            <button onclick="document.getElementById('f-${i}-${itemCount}').click()" style="width:100%; font-size:9px; margin-bottom:5px;">📷 Foto</button>
-                            <input type="file" id="f-${i}-${itemCount}" accept="image/*" style="display:none" onchange="handleImg(this, 'p-${i}-${itemCount}')">
-                            <div class="image-preview" id="p-${i}-${itemCount}"><span>Preview</span></div>
+                            <button class="photo-btn" onclick="document.getElementById('file-${counter}-${i}').click()" style="font-size:9px;">📷 Foto</button>
+                            <input type="file" id="file-${counter}-${i}" style="display:none" onchange="previewImg(this, 'pre-${counter}-${i}')">
+                            <div class="preview-box" id="pre-${counter}-${i}"><span>Preview</span></div>
                         </div>
                     `).join('')}
                 </div>
                 <div class="footer-section">
-                    <textarea placeholder="Keterangan pekerjaan..." rows="1"></textarea>
+                    <textarea placeholder="Tulis keterangan di sini..."></textarea>
                 </div>
             </div>
         `;
-        container.insertAdjacentHTML('beforeend', jobHtml);
+        document.getElementById('main-list').insertAdjacentHTML('beforeend', html);
     }
 
-    function forceExpandAndPrint() {
-        document.querySelectorAll('textarea').forEach(ta => autoExpand(ta));
-        setTimeout(() => { window.print(); }, 200);
-    }
-
-    function handleImg(input, previewId) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById(previewId).innerHTML = `<img src="${e.target.result}">`;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function openMap(id) {
-        activeInputId = id;
-        document.getElementById('map-modal').style.display = 'block';
-        if (!map) {
-            map = L.map('map-container').setView([-2.97, 119.89], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            map.on('click', (e) => {
-                tempCoords = `${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
-                if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
-            });
+    function previewImg(input, targetId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById(targetId).innerHTML = `<img src="${e.target.result}">`;
+            reader.readAsDataURL(input.files[0]);
         }
-        setTimeout(() => map.invalidateSize(), 300);
     }
 
-    function closeMap() { document.getElementById('map-modal').style.display = 'none'; }
-    function confirmLocation() {
-        if (tempCoords) document.getElementById(activeInputId).value = `https://www.google.com/maps?q=${tempCoords}`;
-        closeMap();
+    function preparePrint() {
+        // Paksa semua textarea untuk menyesuaikan tinggi sebelum print
+        document.querySelectorAll('textarea').forEach(ta => adjustHeight(ta));
+        window.print();
     }
 
-    window.onload = addNewJobItem;
+    // Tambahkan item pertama saat loading
+    window.onload = addJob;
 </script>
 
 </body>
