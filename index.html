@@ -71,7 +71,7 @@
             font-size: 10px; background: #eee; color: #333;
         }
 
-        /* GRID 3 KOLOM SEJAJAR */
+        /* GRID FOTO */
         .grid-header {
             display: grid; grid-template-columns: 1fr 1fr 1fr;
             text-align: center; background: #f8f9fa !important;
@@ -83,36 +83,41 @@
         .column { padding: 8px 4px; border-right: 1px solid #eee; display: flex; flex-direction: column; align-items: center; }
         .column:last-child { border-right: none; }
 
-        /* FOTO ACTIONS */
-        .photo-actions { display: flex; gap: 3px; width: 100%; margin-bottom: 5px; }
-        .btn-photo {
-            flex: 1; padding: 5px 0; border: 1px solid #ccc; border-radius: 3px;
-            background: #eee; font-size: 9px; font-weight: bold; cursor: pointer;
-        }
-
         /* IMAGE PREVIEW */
         .image-preview {
             width: 100%; height: 120px; border: 1px dashed #ccc;
             display: flex; justify-content: center; align-items: center;
             background: #fafafa; border-radius: 2px; overflow: hidden; margin-top: 5px;
         }
-        .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .image-preview span { font-size: 9px; color: #ccc; }
+        .image-preview img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* FOOTER SECTION & AUTO-RESIZE TEXTAREA (ADAPTASI DARI INDEX.HTML) */
+        /* KETERANGAN SECTION */
         .footer-section { padding: 10px; background: #fff; }
+        
+        /* Textarea (Hanya terlihat di Web) */
         .footer-section textarea { 
             width: 100%; 
-            min-height: 45px; 
-            padding: 10px; 
-            border: 1px solid #333; /* Border tegas sesuai index.html */
+            min-height: 60px; 
+            padding: 8px; 
+            border: 1px solid #ccc;
             font-size: 11px; 
             line-height: 1.5;
-            resize: none; 
-            overflow: hidden !important; 
+            resize: none;
             display: block;
             border-radius: 4px;
-            background: #fff;
+        }
+
+        /* Div Print (Hanya terlihat saat dicetak) */
+        .print-text-output {
+            display: none; /* Sembunyikan di web */
+            white-space: pre-wrap; /* Jaga enter/baris baru */
+            word-wrap: break-word;
+            font-size: 11px;
+            line-height: 1.5;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            min-height: 40px;
         }
 
         /* ACTIONS */
@@ -120,19 +125,34 @@
         .btn-add { background: #3498db !important; color: white !important; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-print { background: #27ae60 !important; color: white !important; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* MAP MODAL */
+        /* MODAL MAP */
         #map-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
         .modal-content { background: white; margin: 2% auto; width: 95%; max-width: 700px; border-radius: 8px; overflow: hidden; }
-        #map-container { height: 450px; width: 100%; }
-        .modal-footer { padding: 10px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #eee; }
+        #map-container { height: 400px; width: 100%; }
 
+        /* ==========================================
+           ATURAN CETAK (PRINT SETTINGS) 
+           ========================================== */
         @media print {
-            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove { display: none !important; }
-            body { background: white; padding: 0; }
-            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; }
-            input[type="text"], .date-display { border: none; padding: 0; font-weight: bold; }
-            /* Memastikan textarea terlihat bersih saat diprint */
-            .footer-section textarea { border: none !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+            /* Sembunyikan elemen navigasi */
+            .actions, .btn-map-trigger, .photo-actions, input[type="date"], #map-modal, .btn-remove, .btn-photo { 
+                display: none !important; 
+            }
+            
+            body { background: white; padding: 0; margin: 0; }
+            .container { max-width: 100%; }
+            .job-item { border: 1px solid #333; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
+            
+            /* Sembunyikan Textarea, Tampilkan DIV khusus print */
+            .footer-section textarea { display: none !important; }
+            .print-text-output { 
+                display: block !important; /* Munculkan div saat print */
+                border: 1px solid #333 !important;
+                height: auto !important; /* Otomatis mengikuti panjang teks */
+            }
+
+            input[type="text"], .date-display { border: none; padding: 0; font-weight: bold; background: transparent; }
+            .header-main { background: #34495e !important; color: white !important; -webkit-print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -151,7 +171,7 @@
 <div id="map-modal">
     <div class="modal-content">
         <div id="map-container"></div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="padding:10px; text-align:right;">
             <button onclick="closeMap()" style="padding:8px 15px; background:#95a5a6; color:white; border:none; border-radius:4px;">Batal</button>
             <button onclick="confirmLocation()" style="padding:8px 15px; background:#27ae60; color:white; border:none; border-radius:4px; font-weight:bold;">Simpan</button>
         </div>
@@ -164,27 +184,10 @@
     let activeInputId = null;
     let tempCoords = null;
 
-    // FUNGSI AUTO RESIZE (ADAPTASI DARI INDEX.HTML)
-    function adjustHeight(el) {
-        el.style.height = 'auto'; 
-        el.style.height = (el.scrollHeight) + 'px'; 
-    }
-
-    // Listener global untuk mendeteksi pengetikan di textarea
-    document.addEventListener('input', function(event) {
-        if (event.target.tagName.toLowerCase() === 'textarea') {
-            adjustHeight(event.target);
-        }
-    });
-
     function formatToIndonesian(dateObj) {
         const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         return `${days[dateObj.getDay()]}, ${String(dateObj.getDate()).padStart(2, '0')} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-    }
-
-    function onDateChange(input, displayId) {
-        if (input.value) document.getElementById(displayId).innerText = formatToIndonesian(new Date(input.value));
     }
 
     function addNewJobItem() {
@@ -198,7 +201,6 @@
             <div class="job-item" id="item-${itemCount}">
                 <div class="header-main">
                     <span>ITEM #${itemCount}</span>
-                    ${itemCount > 1 ? `<button class="btn-remove" onclick="this.closest('.job-item').remove()">Hapus</button>` : ''}
                 </div>
                 <div class="input-group">
                     <label class="label-mini">Koordinat Lokasi:</label>
@@ -209,8 +211,8 @@
                     <label class="label-mini" style="margin-top:8px;">Tanggal Pekerjaan:</label>
                     <div class="input-row">
                         <div class="date-container">
-                            <input type="date" value="${todayISO}" onchange="onDateChange(this, 'date-label-${itemCount}')">
-                            <div class="date-display" id="date-label-${itemCount}">${todayFormatted}</div>
+                            <input type="date" value="${todayISO}" onchange="this.nextElementSibling.innerText = formatToIndonesian(new Date(this.value))">
+                            <div class="date-display">${todayFormatted}</div>
                         </div>
                     </div>
                 </div>
@@ -231,7 +233,10 @@
                     `).join('')}
                 </div>
                 <div class="footer-section">
-                    <textarea placeholder="Keterangan pekerjaan..."></textarea>
+                    <!-- Textarea untuk input pengguna -->
+                    <textarea id="ta-${itemCount}" placeholder="Keterangan pekerjaan..."></textarea>
+                    <!-- Div tersembunyi untuk hasil cetak (solusi anti tenggelam) -->
+                    <div id="print-ta-${itemCount}" class="print-text-output"></div>
                 </div>
             </div>
         `;
@@ -241,49 +246,26 @@
     function handleImageUpload(input, previewId) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 800;
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                document.getElementById(previewId).innerHTML = `<img src="${compressedDataUrl}">`;
-            };
+        reader.onload = (e) => {
+            document.getElementById(previewId).innerHTML = `<img src="${e.target.result}">`;
         };
     }
 
     function initMap() {
-        map = L.map('map-container').setView([-2.97, 119.89], 12);
+        map = L.map('map-container').setView([-2.97, 119.89], 5);
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
-        const provider = new window.GeoSearch.OpenStreetMapProvider();
-        map.addControl(new window.GeoSearch.GeoSearchControl({ provider: provider, style: 'bar', autoClose: true }));
-        map.on('click', (e) => updateMarker(e.latlng));
-        map.on('geosearch/showlocation', (e) => updateMarker({lat: e.location.y, lng: e.location.x}));
-    }
-
-    function updateMarker(latlng) {
-        tempCoords = `${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}`;
-        if (marker) marker.setLatLng(latlng); else marker = L.marker(latlng).addTo(map);
+        map.on('click', (e) => {
+            tempCoords = `${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
+            if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
+        });
     }
 
     function openMap(inputId) {
         activeInputId = inputId;
         document.getElementById('map-modal').style.display = 'block';
         if (!map) initMap();
-        if (marker) { map.removeLayer(marker); marker = null; }
-        tempCoords = null;
-        map.setView([-2.97, 119.89], 12);
         setTimeout(() => map.invalidateSize(), 300);
     }
 
@@ -296,10 +278,22 @@
         }
     }
 
-    // FUNGSI PRINT (ADAPTASI DARI INDEX.HTML)
+    // FUNGSI CETAK PALING PENTING
     function preparePrint() {
-        document.querySelectorAll('textarea').forEach(ta => adjustHeight(ta));
-        window.print();
+        // Ambil semua textarea, pindahkan isinya ke DIV print
+        const items = document.querySelectorAll('.job-item');
+        items.forEach((item, index) => {
+            const textarea = item.querySelector('textarea');
+            const printDiv = item.querySelector('.print-text-output');
+            
+            // Pindahkan teks dari textarea ke div, jika kosong berikan teks default agar box tetap muncul
+            printDiv.innerText = textarea.value.trim() !== "" ? textarea.value : "Keterangan pekerjaan...";
+        });
+
+        // Tunggu sebentar agar render selesai lalu cetak
+        setTimeout(() => {
+            window.print();
+        }, 500);
     }
 
     window.onload = addNewJobItem;
